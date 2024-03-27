@@ -1,37 +1,37 @@
 <style>
 
     /* Cambiar las propiedades para alinearse con el generador de pdf */
-    @page { 
-        margin: 165px 5px; 
+    @page  { 
+        margin: 190px 5px; 
         /* margin: 165px 10px;  */
         /* margin: 165px 25px; */
         /* margin: 220px 25px; */
     
     }
+    
 
     body{
         font-family: 'Noto Sans', sans-serif;
         line-height: 1;
         font-size: 10px;
-        /* margin-top: 60px; */
-        margin-bottom: -60px;
-        text-justify: inter-word;
-
+        margin-bottom: 400px;
+        /* background-color:aquamarine; */
+        margin-top: -30px;
     }
     
+    /* height: auto; */
     #image {
-        top: -160px;
-        left: 0; /* Añadir esta línea */
-        right: 0; /* Añadir esta línea */
+        top: -180px;
         position: fixed;
-        height: 1100px;
-        max-height: 1100px;
-        width: 100%; /* Cambiar esta línea */
-        max-width: none; /* Cambiar esta línea */
+        /* height: 1045px; */
+        height: 545px;
+        max-height: 545px;
+        width: 805px;
+        max-width: 805px;
         z-index: -9999;
-        background-image: url('../storage/app/public/membrete_laboratorios/RECIBO-DE-PAGO.png' ); 
-        background-size: 100%; /* Cambiar esta línea */
-        background-repeat: no-repeat; 
+        background-image: url('../storage/app/public/membrete_laboratorios/RECIBO-DE-PAGO.png'); 
+        background-size: 805px 545px;
+        background-repeat: no-repeat;  
     }
 
     .header { 
@@ -39,21 +39,16 @@
         top: -190px;
         left: 0; 
         right: 0; 
-        height: 175px; 
+        height: 160px; 
         margin-top: 0; /*-30px*/
+        /* background-color: cadetblue; */
     }
 
     .footer { 
         position: fixed; 
-        bottom: -165px; 
-        left: 0; 
-        right: 0; 
-        height: 145px; 
-        /* Para kuxtal */
-        /* height: 135px;  */
-        /* background-color: aqua */
+        bottom: 345px; 
+        /* background-color:darkcyan */
     }
-    
     .footer .page:after {
         content: counter(page); 
     }
@@ -67,11 +62,6 @@
     .invoice-content {
         /* margin-bottom: 450px;  */
         border-radius: 4px;
-        padding-bottom: 10px;
-        padding-right: 20px;
-        padding-left: 20px;
-        text-align: justify;
-        text-justify: inter-word;
     }
     /* Separador, solo borde inferior */
     .separador-bottom{
@@ -104,38 +94,30 @@
         text-align: center;
     }
     
-
+    
     /* tabla */
     table{
         width: 100%;
         /* white-space:nowrap; */
-        /* background-color: greenyellow; */
-        max-width: 100%;
-        margin: auto;
-        white-space:nowrap;
     }
-    
     th, td {
         /* border-bottom: 1px solid #ddd; */
         word-break: break-all;
-        text-align: justify;
-        white-space: no-wrap;
-
     }
 
     /* Para divisiones de 3 */
     .col-left{
-        width: 25%; 
+        width: 33%; 
         text-align: left;
         /* font-size: 10px; */
     }
     .col-center{
-        width: 50%; 
+        width: 33%; 
         text-align: center;
         /* font-size: 10px; */
     }
     .col-right{
-        width: 25%; 
+        width: 33%; 
         text-align: left;
         /* font-size: 10px; */
     }
@@ -181,17 +163,10 @@
 
     .columna-una{
         width: 25%;
-        max-width: 25%;
         text-align: left;
     }
     .columna-dos{
         width: 75%;
-        max-width: 75%;
         text-align: left;
     }
-
-    /* .columna-dos p {
-        word-wrap: break-word; 
-        max-width: 100%; 
-    } */
-</style>
+</style><?php /**PATH C:\laragon\www\laboratorios\resources\views/layout/partials/ticket/style_half.blade.php ENDPATH**/ ?>

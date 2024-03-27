@@ -1,7 +1,7 @@
 <style>
 
     /* Cambiar las propiedades para alinearse con el generador de pdf */
-    @page { 
+    @page  { 
         margin: 165px 5px; 
         /* margin: 165px 10px;  */
         /* margin: 165px 25px; */
@@ -29,7 +29,7 @@
         width: 100%; /* Cambiar esta línea */
         max-width: none; /* Cambiar esta línea */
         z-index: -9999;
-        background-image: url('../storage/app/public/membrete_laboratorios/RECIBO-DE-PAGO.png' ); 
+        background-image: url('../storage/app/public/membrete_laboratorios/PAGO.png' ); 
         background-size: 100%; /* Cambiar esta línea */
         background-repeat: no-repeat; 
     }
@@ -194,4 +194,4 @@
         word-wrap: break-word; 
         max-width: 100%; 
     } */
-</style>
+</style><?php /**PATH C:\laragon\www\laboratorios\resources\views/layout/partials/ticket/style_complete.blade.php ENDPATH**/ ?>
