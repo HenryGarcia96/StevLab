@@ -1,5 +1,7 @@
 .env
 .env-example
+example.env
+
 vendor
 
 
