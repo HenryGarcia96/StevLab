@@ -13,42 +13,40 @@
     body{
         font-family: 'Noto Sans', sans-serif;
         line-height: 1;
-        font-size: 11px;
-        margin-top: -10px;
-        margin-bottom: 100px;
+        font-size: 10px;
+        margin-top: -40px;
+        margin-bottom: 430px;
+        /* background-color:  blue; */
+        /* margin-left: 10px; */
+        /* margin-right: 10px; */
     }
     
+    /* height: auto; */
     #image {
         top: -180px;
         position: fixed;
         /* height: 1045px; */
-        height: 2200px;
-        max-height: 2200px;
-        width: 800px;
+        height: 545px;
+        max-height: 545px;
+        width: 805px;
         max-width: 805px;
         z-index: -9999;
-        background-image: url('../storage/app/public/membrete_laboratorios/COTIZACIONES.png' ); 
-        background-size: 100%;
-        background-repeat: no-repeat; 
+        background-image: url('../storage/app/public/membrete_laboratorios/COTIZACIONES.png'); 
+        background-size: 805px 545px;
+        background-repeat: no-repeat;  
     }
 
     .header { 
         position: fixed; 
-        top: -80px;
+        top: -100px;
         /* background-color:aqua; */
     }
 
     .footer { 
         position: fixed; 
-        bottom: -165px; 
-        left: 0; 
-        right: 0; 
-        height: 145px; 
-        /* Para kuxtal */
-        /* height: 135px;  */
-        /* background-color: aqua */
+        bottom: 370px; 
+        /* background-color:aqua; */
     }
-    
     .footer .page:after {
         content: counter(page); 
     }

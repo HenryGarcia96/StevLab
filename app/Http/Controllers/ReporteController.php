@@ -119,10 +119,10 @@ class ReporteController extends Controller
     }
 
     public function make_reporte(Request $request){
+        // $tempInicio = microtime(true);
         
         $laboratorio    = User::where('id', Auth::user()->id)->first()->labs()->first();
         $memb = "data:image/jpeg;base64," . base64_encode(Storage::disk('public')->get($laboratorio->membrete));
-
 
         // dd($request);
         $doctor     = Doctores::where('id', $request->doctor)->first();
@@ -133,30 +133,46 @@ class ReporteController extends Controller
         $final      = Carbon::parse($request->final)->addDay();
 
         $results = Recepcions::whereBetween('recepcions.created_at', [$inicio, $final])
-        ->when($request->doctor !== 'todo', function ($query) use ($doctor) {
-            $query->where('id_doctor', $doctor->id);
-        })
-        ->when($request->usuario !== 'todo', function ($query) use ($usuario) {
-            $query->where('user_id', $usuario->id);
-        })
-        ->when($request->empresa !== 'todo', function ($query) use ($empresa) {
-            $query->where('id_empresa', $empresa->id);
-        })
-        ->when($request->sucursal !== 'todo', function ($query) use ($sucursal) {
-            $query->whereHas('sucursales', function ($query) use ($sucursal) {
-                $query->where('subsidiary_id', $sucursal->id);
-            });
-        })
-        ->orderBy('id', 'desc')
-        ->get();
+            ->when($request->doctor !== 'todo', function ($query) use ($doctor) {
+                $query->where('id_doctor', $doctor->id);
+            })
+            ->when($request->usuario !== 'todo', function ($query) use ($usuario) {
+                $query->where('user_id', $usuario->id);
+            })
+            ->when($request->empresa !== 'todo', function ($query) use ($empresa) {
+                $query->where('id_empresa', $empresa->id);
+            })
+            ->when($request->sucursal !== 'todo', function ($query) use ($sucursal) {
+                $query->whereHas('sucursales', function ($query) use ($sucursal) {
+                    $query->where('subsidiary_id', $sucursal->id);
+                });
+            })
+            // ->with(['doctores', 'empresas', 'paciente', 'lista'])
+            ->select('recepcions.id', 'recepcions.id_doctor', 'recepcions.id_empresa', 'recepcions.id_paciente', 'recepcions.descuento', 'recepcions.folio', 'recepcions.estado', 'recepcions.created_at')
+            ->orderBy('id', 'desc')
+            ->get();
+        // dd($results->count());
+        
         // dd($results->toArray());
         // OBTENER MONTO
+        // $tiempo = microtime(true) - $tempInicio;
+        // echo "La consulta tardó $tiempo segundos en ejecutarse.";
+        // dd("La consulta tardo $tiempo en ejecutarse");
 
-        //pdf
-        $pdf = Pdf::loadView('invoices.reportes.arqueo.invoice-arqueo',['membrete' => $memb, 'folios' => $results]);
+        // pdf
+        $pdf = Pdf::loadView('invoices.reportes.arqueo.invoice-arqueo',[
+            'membrete' => $memb, 
+            'folios' => $results
+        ]);
+
         $pdf->setPaper('letter', 'portrait');
+        $pdf->render();
+        return $pdf->download();
 
-        return $pdf->stream();
+        // return view('invoices.reportes.arqueo.invoice-arqueo',[
+        //         'membrete' => $memb, 
+        //         'folios' => $results
+        //     ]);
     }
 
 

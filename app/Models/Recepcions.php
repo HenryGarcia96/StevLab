@@ -68,6 +68,22 @@ class Recepcions extends Model
         }
     }
 
+    public function getNamePatient(){
+        return $this->paciente()->first()->nombre;
+    }
+
+    public function getNameDoctor(){
+        return $this->doctores()->first()->nombre;
+    }
+
+    public function getNameEmpresa(){
+        return $this->empresas()->first()->descripcion;
+    }
+    
+    public function getAnticipos(){
+        return ($this->pago()->count() == 1 && $this->estado == 'no pagado' ) ? "$ " . $this->pago()->first()->importe : "$ 0" ;
+    }
+
     public function empresas(){
         return $this->belongsTo(Empresas::class, 'id_empresa'); 
     }
