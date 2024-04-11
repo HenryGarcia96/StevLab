@@ -19,7 +19,7 @@
                     $ {{$pago->importe}}
 
                     <strong>Pago pendiente</strong>
-                    $ {{$estudios->sum('precio') - $folios->pago()->sum('importe')}}
+                    $ {{($estudios->sum('precio') - $folios->pago()->sum('importe')) - $folios->descuento}}
 
                     <strong>Metodo de pago</strong>
                     {{$pago->metodo_pago}}
