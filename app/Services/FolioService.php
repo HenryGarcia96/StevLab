@@ -364,17 +364,27 @@ class FolioService{
         }
         return $consulta;
     }
+    // protected function get_imagenologia_area(Model $folio, Request $request){
+    //     $imagenologia = $folio->picture()->when($request->areaId != 'todo', function ($query) use ($request){
+    //         $query->whereHas('deparment', function ($query) use ($request){
+    //             $query->where('deparments_id', $request->areaId);
+    //         });
+    //     })->get();
 
+    //     foreach ($imagenologia as $key => $img) {
+    //         $img->analitos = $img->analitos()->orderBy('pictures_has_analitos.orden', 'asc')->get();
+    //     }
+
+    //     return $imagenologia;
+    // }
     protected function get_imagenologia_area(Model $folio, Request $request){
-        $imagenologia = $folio->picture()->when($request->areaId != 'todo', function ($query) use ($request){
+        $consulta = $folio->picture()->when($request->areaId != 'todo', function ($query) use ($request){
             $query->whereHas('deparment', function ($query) use ($request){
                 $query->where('deparments_id', $request->areaId);
             });
         })->get();
 
-        foreach ($imagenologia as $key => $img) {
-            $img->analitos = $img->analitos()->orderBy('pictures_has_analitos.orden', 'asc')->get();
-        }
+        $imagenologia = $this->loadInformationImg($folio, $consulta);
 
         return $imagenologia;
     }
@@ -424,6 +434,26 @@ class FolioService{
         return $estudios;
     }
 
+    public function loadInformationImg(Model $folio, Mixed $estudios){
+        foreach ($estudios as $key => $estudio) {
+            $estudio->analitos = $estudio->analitos()->orderBy('pictures_has_analitos.orden', 'asc')->get();
+            foreach ($estudio->analitos as $key => $analito) {
+                $consulta_historial = $folio->historials()->where('historials_has_recepcions.picture_id', $estudio->id)
+                    ->where('historials.clave', $analito->clave)
+                    ->first();
+                
+                if($consulta_historial){
+                    $analito->id_valor_captura = $consulta_historial->id;
+                    $analito->valor_captura = $consulta_historial->valor;
+                }
+
+                $estudio->validacion = $folio->picture()->where('picture_id', $estudio->id)->value('recepcions_has_deparments.estatus_area');
+            }
+
+        }
+        
+        return $estudios;
+    }
 
     protected function preventInformation(Model $folio, Mixed $estudios){
         // dd($folio);
