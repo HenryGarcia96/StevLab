@@ -122,15 +122,27 @@ class PagoService{
      */
     public function makeNote(Request $request){
         $folio = Recepcions::where('id', $request->folio)->first();
-        $pago = Pago::where('id', $request->pago)->first() ?? $folio->pago()->latest()->first();
-        $pdfData    = $this->preparePdfData($folio, $pago, $request->tipo);
-        $view       = $this->determinePdfView($request->tipo);
-        $paper      = $this->determinePaperSize($request->tipo);
+        try {
+            $pago = Pago::where('id', $request->pago)->first() ?? $folio->pago()->latest()->first();
 
-        $pdf = Pdf::loadView($view, $pdfData);
-        $pdf->setPaper($paper, 'portrait');
-        $pdf->render();
-        return $pdf;
+            try {
+                
+                $pdfData    = $this->preparePdfData($folio, $pago, $request->tipo);
+                $view       = $this->determinePdfView($request->tipo);
+                $paper      = $this->determinePaperSize($request->tipo);
+
+                $pdf = Pdf::loadView($view, $pdfData);
+                $pdf->setPaper($paper, 'portrait');
+                $pdf->render();
+                return $pdf;
+            } catch (\Throwable $th) {
+                return 'Pago no existe para el folio actual';
+            }
+        } catch (\Throwable $th) {
+            return 'No hay pagos registrados';
+        }
+        
+        
     }
 
     /**
@@ -189,7 +201,7 @@ class PagoService{
      * @return String
      */
     protected function determinePdfView(String $arreglo){
-        return ($arreglo === 'ticket') ? 'invoices.ticket.ticket' : 'invoices.ticket.ticket-letter-complete';
+        return ($arreglo === 'ticket') ? 'invoices.ticket.ticket' : 'invoices.ticket.ticket-letter';
     }
 
     /**
