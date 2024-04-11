@@ -582,8 +582,69 @@ class RecepcionsController extends Controller{
         return $response;
     }
 
+    public function upload_zip_file(Request $request){
+        $id = $request->only('id_analito');
+        $folio = $request->only('folio');
+        $codigo = $request->only('clave');
+        $descripcion = $request->only('descripcion');
+        $identificador = $request->only('identificador');
+
+        if ($request->hasFile('file')) {
+            $extension = $request->file('file')->extension();
+            // dd($extension);
+            $prepathName = rand(1,100) . '-' . $folio['folio'] . '-' . $identificador['identificador'] . '-' . $codigo['clave']. '-' . date('mdy') . '.' . $extension;
+            // $file_name  = 'resultados/imagenes/img-'. rand(1,100) . '-' . $prepathName . '.' . $archivo->getClientOriginalExtension();
+            // Si es una imagen
+            if (in_array($extension, ['jpg', 'jpeg', 'png'])) {
+                $path = $request->file('file')->storeAs('public', 'resultados/imagenes/img-' . $prepathName );
+                $path = 'resultados/imagenes/img-'. $prepathName;
+            } elseif (in_array($extension, ['zip', 'rar'])) {
+                // Si es un archivo comprimido
+                $path = $request->file('file')->storeAs('public',  'resultados/imagenes/img-' . $prepathName);
+                $path = 'resultados/imagenes/img-'. $prepathName; // quitamos la carpeta public
+            } else {
+                // Manejar otros tipos de archivos
+                return response()->json([
+                    'error' => 'El tipo de archivo no es compatible.'
+                ], 400);
+            }
+        } else {
+            return response()->json([
+                'error' => 'No se ha enviado ningún archivo.'
+            ], 400);
+        }
+
+        $recepcion = Recepcions::where('folio', $folio['folio'])->first();
+        $clave_estudio = Picture::where('clave', $identificador['identificador'])->first();
+
+        $insercion = Historial::updateOrCreate([
+            'id' => $id,
+            'clave' => $codigo['clave'], 
+            'descripcion'=>$descripcion['descripcion'],     
+        ],[
+            'valor' => $path,
+        ]);
+        
+        $consulta = DB::table('historials_has_recepcions')->where([
+            'recepcions_id' => $recepcion->id,
+            'historial_id'  => $insercion->id,
+            'picture_id'    => $clave_estudio->id,
+        ])->first();
+        
+        if(! $consulta){
+            $recepcion->historials()->attach($insercion->id, [
+                'picture_id' => $clave_estudio->id, 
+                'recepcions_id' => $recepcion->id
+            ]);
+        }
+
+        return response()->json([
+            'msj' => true,
+            'id' => $insercion->id,
+        ],201);        
+    }
+
     public function verify_pending_pay(Request $request){
-        // dd($request);
         $folio = $request->only('folio');
 
         $recepcion = Recepcions::where('folio', $folio['folio'])->first();
@@ -799,6 +860,7 @@ class RecepcionsController extends Controller{
     }
 
     public function invalida_resultados(Request $request){
+        // dd($request);
         $user = User::where('id', Auth::user()->id)->first(); 
         // dd($user->hasPermissionTo('invalida_resultados'));
         if($user->hasPermissionTo('invalida_resultados')){
@@ -826,7 +888,7 @@ class RecepcionsController extends Controller{
     public function valida_imagenologia(Request $request){
         $user = User::where('id', Auth::user()->id)->first();
         
-        if($user->hasPermissionTo('valida resultados')){
+        if($user->hasPermissionTo('valida_resultados')){
             $folio = $request->only('folio');
             $estudios = $request->only('estudios');
             $referencia = $request->only('identificador');
@@ -866,6 +928,31 @@ class RecepcionsController extends Controller{
             header("HTTP/1.1 400");
             header('Content-Type: application/json');
             return json_encode($response);
+        }
+    }
+
+    public function invalida_imagenologia(Request $request){
+        $user = User::where('id', Auth::user()->id)->first(); 
+        // dd($user->hasPermissionTo('invalida_resultados'));
+        if($user->hasPermissionTo('invalida_resultados')){
+            $folio = $request->only('folio');
+            $estudios = $request->only('estudios');
+            $referencia = $request->only('identificador');
+    
+            $recepcion = Recepcions::where('folio', $folio)->first(); 
+            $estudio = Picture::where('clave', $referencia['identificador'])->first();
+    
+            $recepcion->picture()->updateExistingPivot($estudio->id, ['estatus_area' => 'capturado']);
+    
+            return response()->json([
+                'success' => true,
+                'message'=> 'Estudio invalidado'
+            ],201);
+        }else{
+            return response()->json([
+                'success' => false,
+                'message' => 'Usted no tiene el permiso para realizar la validación.'
+            ],401);
         }
     }
 
@@ -1067,6 +1154,7 @@ class RecepcionsController extends Controller{
         $path = 'public/imagenologia/F-'.$folio['folio'].'.pdf';
         $deletepre = Storage::delete($path); 
         $pathSave = Storage::put($path, $pdf->output());
+        $folios->res_file_img = '/imagenologia/F-'.$folio['folio'].'.pdf';
 
         if($request->membrete == 'si'){
             $membreteFile = new Fpdi('P', 'mm', 'letter');
@@ -1102,19 +1190,77 @@ class RecepcionsController extends Controller{
         $img_valido     = base64_encode(Storage::disk('public')->get($folios->valida()->first()->firma));
         $barcode        = DNS1D::getBarcodeSVG($folios->folio, 'C128', 1.20, 35);
         
-         // JOB creado, realizar pruebas luego
-        try {
-            $job  = GeneratePdfImg::dispatch($usuario, $folios, null, $seleccion, $membrete['membrete'] );
-            $ruta = ['pdf' => '/public/storage/imagenologia/F-'. $folio['folio'] .'.pdf'];
-            return $ruta;
-        } catch (\Throwable $e) {
-            dd($e);
-            // Log::error("Error al generar reporte: ". $e->getMessage() );
+        // Service:
+        $path = 'imagenologia/F-'.$folios->folio.'.pdf';
+
+        $pdfData = [
+            'laboratorio'   => $laboratorio, 
+            'usuario'       => $usuario,
+            'folios'        => $folios,
+
+            'barcode'       => $barcode,
+
+            'fondo'         => $membrete['membrete'],
+
+            'barcode'       => $barcode,
+            // 'membrete'      => 'data:image/jpeg;base64,' .base64_encode($fondo),
+            
+            'img_valido'    => $img_valido,
+        ];
+
+        $pdf = $this->pdfService->generateAndStorePDF('invoices.imagenologia.invoice-single-imagenologia', $pdfData, 'letter', 'portrait', $path, false);
+        // $path = 'public/imagenologia/F-'.$folios->folio.'.pdf';
+        $pathSave = Storage::disk('public')->put($path, $pdf->output());
+        $folios->update(['res_file_img' => 'imagenologia/F-'.$folios->folio.'.pdf']);
+
+        if($membrete['membrete'] === 'si'){
+            switch ($seleccion) {
+                case 'imagenologia':
+                    $fondo = $laboratorio->membrete_img;
+                    break;
+                case 'principal':
+                    $fondo = $laboratorio->membrete;
+                    break;
+                case 'secundario':
+                    $fondo = $laboratorio->membrete_secundario;
+                    break;
+                case 'terciario':
+                    $fondo = $laboratorio->membrete_terciario;
+                    break;
+                default:
+                    $fondo = $laboratorio->membrete_img;
+                    break;
+            }
+
+            $membreteFile = new Fpdi('P', 'mm', 'letter');
+            $documento = $membreteFile->setSourceFile(public_path() . '/storage/' . $folios->res_file_img);
+            $imagen     = public_path(). '/storage/' . $fondo;
+            // $img = Storage::disk('public')->get($fondo);
+            
+            for($pageNo = 1; $pageNo <= $documento; $pageNo++){
+                $template = $membreteFile->importPage($pageNo);
+                $membreteFile->AddPage();
+                $membreteFile->Image($imagen, 0, 0, 216, 279);
+                $membreteFile->useTemplate($template, ['adjustPageSize' => true]);
+            }
+            $membreteFile->Output('F', 'public/storage/imagenologia/F-'.$folios->folio.'.pdf');
         }
+         // JOB creado, realizar pruebas luego
+        // try {
+        //     $job  = GeneratePdfImg::dispatch($usuario, $folios, null, $seleccion, $membrete['membrete'] );
+        //     $ruta = ['pdf' => '/public/storage/imagenologia/F-'. $folio['folio'] .'.pdf'];
+        //     return $ruta;
+        // } catch (\Throwable $e) {
+        //     dd($e);
+        //     // Log::error("Error al generar reporte: ". $e->getMessage() );
+        // }
 
-        $response = ['pdf' => '/public/storage/imagenologia/F-'.$folio['folio'].'.pdf'];
+        // $response = ['pdf' => '/public/storage/imagenologia/F-'.$folio['folio'].'.pdf'];
 
-        return $response;
+        // return $response;
+        return response()->json([
+            'pdf' =>  '/public/storage/' . $path
+        ],201);
     }
 
     // Genera resultados por correo
@@ -1337,7 +1483,9 @@ class RecepcionsController extends Controller{
         $folio = $request->only('folio');
         $membrete = $request->only('membrete');
         $seleccion = $request->seleccion;
-// dd($request);
+        $salto = $request->only('estilo');
+        // dd($folio, $membrete, $seleccion, $salto, $request, );
+        
         // Datos del usuario
         $usuario        = Auth::user();
         $folios         = Recepcions::where('folio', $folio)->first();
@@ -1354,7 +1502,7 @@ class RecepcionsController extends Controller{
             // 'membrete'      => 'data:image/png;base64,' .base64_encode($this->resultadoService->obtainWatermark($request->seleccion)),
             'barcode'       => $this->resultadoService->getBarcode($folios),
             'img_valido'    => $this->resultadoService->getSign($usuario->labs()->first()),
-            'salto'         => $request->estilo,
+            'salto'         => $salto['estilo'],
         ];
         
         $pdf = $this->pdfService->generateAndStorePDF('invoices.resultados.invoice-all-resultado-membrete', $pdfData, 'letter', 'portrait', $path, false);
