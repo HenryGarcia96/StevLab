@@ -23,7 +23,7 @@
 <!----------------------------------------------------------------------------------------------------->
 @if (session('msj'))
 
-<div class="alert alert-warning alert-dismissible  fade show" role="alert">
+<div class="alert alert-danger alert-dismissible  fade show" role="alert">
     <i data-feather="alert-circle"></i>
     <strong>Aviso!</strong> {{ session('msj') }} </a>. 
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="btn-close"></button>

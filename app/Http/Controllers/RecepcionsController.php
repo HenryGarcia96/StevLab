@@ -539,8 +539,9 @@ class RecepcionsController extends Controller{
         $descripcion = $request->only('descripcion');
         $identificador = $request->only('identificador');
 
-        $path = $request->file('file')->storeAs('public', 'resultados/imagenes/img-'. $codigo['clave']. '-' . date('mdy') . '.png');
-        $path = 'resultados/imagenes/img-'. $codigo['clave'] . '-' . date('mdy') . '.png';
+        $rand = rand(1,100) . '-'  ;
+        $path = $request->file('file')->storeAs('public', 'resultados/imagenes/img-' . $rand .  $codigo['clave']. '-' . date('mdy') . '.png');
+        $path = 'resultados/imagenes/img-'. $rand .  $codigo['clave'] . '-' . date('mdy') . '.png';
 
         $recepcion = Recepcions::where('folio', $folio['folio'])->first();
         $clave_estudio = Estudio::where('clave', $identificador['identificador'])->first();
