@@ -358,8 +358,13 @@ class CajaController extends Controller
     }
 
     public function make_note(Request $request){
-        $nota = $this->pagoService->makeNote($request);
-        return $nota->stream();
+        $folio = Recepcions::where('id', $request->folio)->first();
+        if($folio->pago()->first()){
+            $nota = $this->pagoService->makeNote($request);
+            return $nota->stream();
+        }else{
+            return redirect()->route('stevlab.recepcion.editar')->with('msj', 'No hay pagos registrados para este folio.');
+        }
     }
 
     public function genera_reporte_dia(Request $request){
