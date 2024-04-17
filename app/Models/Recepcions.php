@@ -4,15 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\URL;
-use Milon\Barcode\DNS2D;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Recepcions extends Model
 {
     use HasFactory;
     use SoftDeletes;
+    use LogsActivity;
+
+    protected static $recordEvents = ['created', 'updated','deleted'];
 
     public $fillable = ['folio', 
                         'h_flebotomia', 
@@ -48,6 +50,13 @@ class Recepcions extends Model
 
     ];
 
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['updated_at', 'deleted'])
+            ->useLogName('recepcion')
+            ->setDescriptionForEvent(fn(string $eventName) => "Folio {$eventName}");
+    }
 
     public function getContador(){
         

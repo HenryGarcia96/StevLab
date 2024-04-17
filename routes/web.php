@@ -84,7 +84,6 @@ Route::middleware([
         'auth:sanctum', 
         config('jetstream.auth_session'), 
         'verified', 
-        'log',
         // 'role.redirect'
     ])->name('stevlab.')->prefix('stevlab')->group(function () {
 

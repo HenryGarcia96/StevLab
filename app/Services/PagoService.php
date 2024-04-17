@@ -35,6 +35,8 @@ class PagoService{
             'observaciones'     => $pago['observaciones'],
         ]);
 
+        activity('caja')->performedOn($create)->withProperties(['folio' => $pago['identificador_folio']])->log('pago creado');
+
         $this->asociarCaja($this->cajaActual(), $create, $this->getIdentificador($pago['identificador_folio']));
 
         $this->updateFolio($this->getIdentificador($pago['identificador_folio']), request());
@@ -106,13 +108,13 @@ class PagoService{
      * @param Request $pago
      * @return void
      */
-    protected function updateFolio(Model $folio, Request $pago){
+    protected function  updateFolio(Model $folio, Request $pago){
+        // dd($folio, $pago);
         $folio->update([
             'estado' => $pago['estado'] === 'pagado' ? 'pagado' : 'no pagado',
             'num_total' => $this->sumative($folio),
             'descuento' => $folio->descuento + $pago['descuento'],
         ]);
-
     }
 
     /**
