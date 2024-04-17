@@ -2610,6 +2610,7 @@ class RecepcionsController extends Controller{
 
     public function recepcion_delete_folio($id, Request $request){
         $delete = Recepcions::where('id', $id)->delete();
+        activity('recepcion')->performedOn(Recepcions::withTrashed()->find($id))->log('Folio eliminado');
         return redirect()->route('stevlab.recepcion.editar');
     }
 
