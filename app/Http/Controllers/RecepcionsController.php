@@ -187,7 +187,7 @@ class RecepcionsController extends Controller{
         }
 
         // Invoco al logger
-        activity('recepcion')->performedOn($recepcions)->log('folio creado');
+        activity('recepcion')->performedOn($recepcions)->log('Folio creado');
         
         // Preparar los documentos de consentimiento
         return response()->json([
@@ -206,7 +206,7 @@ class RecepcionsController extends Controller{
         $response = $this->folioService->linkPrecios($this->folioService->getFolioByID($request->id), $request->lista);
 
         // Invoco al logger
-        activity('recepcion')->performedOn($this->folioService->getFolioByID($request->id))->log('estudios guardados para folio sujeto');
+        activity('recepcion')->performedOn($this->folioService->getFolioByID($request->id))->log('Estudios guardados para folio sujeto');
 
         return response()->json([
             'success' => true,
@@ -548,6 +548,7 @@ class RecepcionsController extends Controller{
         $recepcion = Recepcions::where('folio', $folio['folio'])->first();
         $clave_estudio = Estudio::where('clave', $identificador['identificador'])->first();
 
+        activity('captura')->performedOn($clave_estudio)->withProperties(['folio' => $recepcion->id])->log('Imagen para captura capturada');
         
         $insercion = Historial::updateOrCreate([
             'id' => $id,
@@ -619,6 +620,7 @@ class RecepcionsController extends Controller{
 
         $recepcion = Recepcions::where('folio', $folio['folio'])->first();
         $clave_estudio = Picture::where('clave', $identificador['identificador'])->first();
+        activity('captura')->performedOn($clave_estudio)->withProperties(['folio' => $recepcion->id])->log('Imagen para imagenologia capturada');
 
         $insercion = Historial::updateOrCreate([
             'id' => $id,
@@ -828,7 +830,7 @@ class RecepcionsController extends Controller{
 
 
         // 
-        activity('captura')->performedOn($estudio)->withProperties(['folio' => $recepcion->id])->log('estudio capturado');
+        activity('captura')->performedOn($estudio)->withProperties(['folio' => $recepcion->id])->log('Estudio capturado');
 
         // Retornas algo al sistema
         return response()->json([
@@ -850,7 +852,7 @@ class RecepcionsController extends Controller{
             $recepcion->estudios()->updateExistingPivot($estudio->id, ['status' => 'validado']);
             $recepcion->historials()->where('estudio_id', $estudio->id)->update(['estatus'=>'validado']);
 
-            activity('captura')->performedOn($estudio)->withProperties(['folio' => $recepcion->id])->log('estudio validado');
+            activity('captura')->performedOn($estudio)->withProperties(['folio' => $recepcion->id])->log('Estudio validado');
 
             return response()->json([
                 'success' => true,
@@ -879,7 +881,7 @@ class RecepcionsController extends Controller{
     
             $recepcion->estudios()->updateExistingPivot($estudio->id, ['status' => 'capturado']);
     
-            activity('captura')->performedOn($estudio)->withProperties(['folio' => $recepcion->id])->log('estudio invalidado');
+            activity('captura')->performedOn($estudio)->withProperties(['folio' => $recepcion->id])->log('Estudio invalidado');
     
             return response()->json([
                 'success' => true,
@@ -915,6 +917,9 @@ class RecepcionsController extends Controller{
             Recepcions::where('id', $recepcion->id)->update([
                 'valida_id' => Auth::user()->id,
             ]);
+
+            activity('captura')->performedOn($clave_estudio)->withProperties(['folio' => $recepcion->id])->log('Estudio para imagenologia validada');
+
             
             if($actualizar) {
                 $recepcion->deparment()->where('deparments.id', $clave_estudio->deparment()->first()->id)->update(['estatus_area' => 'validado']);
@@ -949,6 +954,7 @@ class RecepcionsController extends Controller{
     
             $recepcion = Recepcions::where('folio', $folio)->first(); 
             $estudio = Picture::where('clave', $referencia['identificador'])->first();
+            activity('captura')->performedOn($estudio)->withProperties(['folio' => $recepcion->id])->log('Estudio imagenologia invalidada');
     
             $recepcion->picture()->updateExistingPivot($estudio->id, ['estatus_area' => 'capturado']);
     
@@ -1014,6 +1020,8 @@ class RecepcionsController extends Controller{
         // Actualiza quien valida
         Recepcions::where('id', $recepcion->id)->update(['captura_id' => Auth::user()->id]);
 
+        activity('captura')->performedOn($clave_estudio)->withProperties(['folio' => $recepcion->id])->log('Estudio imagenologia capturada');
+
         // if($insercion) {
         //     // $insercion->recepcions()->first()
         //     //     ->areas()->where('areas.id', $clave_estudio->areas()->first()->id)
@@ -1052,6 +1060,7 @@ class RecepcionsController extends Controller{
 
         $recepcion = Recepcions::where('folio', $folio['folio'])->first();
         $clave_estudio = Picture::where('clave', $identificador['identificador'])->first();
+        activity('captura')->performedOn($clave_estudio)->withProperties(['folio' => $recepcion->id])->log('Estudio para imagenologia validada');
 
         
         $insercion = Historial::updateOrCreate([

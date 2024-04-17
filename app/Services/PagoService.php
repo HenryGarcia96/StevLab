@@ -35,7 +35,7 @@ class PagoService{
             'observaciones'     => $pago['observaciones'],
         ]);
 
-        activity('caja')->performedOn($create)->withProperties(['folio' => $pago['identificador_folio']])->log('pago creado');
+        activity('caja')->performedOn($create)->withProperties(['folio' => $pago['identificador_folio']])->log('Pago creado');
 
         $this->asociarCaja($this->cajaActual(), $create, $this->getIdentificador($pago['identificador_folio']));
 
