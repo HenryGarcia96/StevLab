@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\Logger;
 use App\Exports\DatosExport;
 use App\Helpers\PaymentHelper;
 use App\Helpers\PdfHelper;
@@ -188,7 +187,7 @@ class RecepcionsController extends Controller{
         }
 
         // Invoco al logger
-        Logger::logAction($request, 'Folios', $recepcions->id, 'store');
+        activity('recepcion')->performedOn($recepcions)->log('Folio creado');
         
         // Preparar los documentos de consentimiento
         return response()->json([
@@ -205,6 +204,9 @@ class RecepcionsController extends Controller{
         // $this->folioService->linkStudies($request->imagenes, 'Imagenologia', $request->id);
 
         $response = $this->folioService->linkPrecios($this->folioService->getFolioByID($request->id), $request->lista);
+
+        // Invoco al logger
+        activity('recepcion')->performedOn($this->folioService->getFolioByID($request->id))->log('Estudios guardados para folio sujeto');
 
         return response()->json([
             'success' => true,
@@ -539,12 +541,14 @@ class RecepcionsController extends Controller{
         $descripcion = $request->only('descripcion');
         $identificador = $request->only('identificador');
 
-        $path = $request->file('file')->storeAs('public', 'resultados/imagenes/img-'. $codigo['clave']. '-' . date('mdy') . '.png');
-        $path = 'resultados/imagenes/img-'. $codigo['clave'] . '-' . date('mdy') . '.png';
+        $rand = rand(1,100) . '-'  ;
+        $path = $request->file('file')->storeAs('public', 'resultados/imagenes/img-' . $rand .  $codigo['clave']. '-' . date('mdy') . '.png');
+        $path = 'resultados/imagenes/img-'. $rand .  $codigo['clave'] . '-' . date('mdy') . '.png';
 
         $recepcion = Recepcions::where('folio', $folio['folio'])->first();
         $clave_estudio = Estudio::where('clave', $identificador['identificador'])->first();
 
+        activity('captura')->performedOn($clave_estudio)->withProperties(['folio' => $recepcion->id])->log('Imagen para captura capturada');
         
         $insercion = Historial::updateOrCreate([
             'id' => $id,
@@ -616,6 +620,7 @@ class RecepcionsController extends Controller{
 
         $recepcion = Recepcions::where('folio', $folio['folio'])->first();
         $clave_estudio = Picture::where('clave', $identificador['identificador'])->first();
+        activity('captura')->performedOn($clave_estudio)->withProperties(['folio' => $recepcion->id])->log('Imagen para imagenologia capturada');
 
         $insercion = Historial::updateOrCreate([
             'id' => $id,
@@ -679,8 +684,7 @@ class RecepcionsController extends Controller{
         }
 
         $job = MaquilaArchivoJob::dispatch($folio['folio'], $urlFilePath, $urlImgPath);
-
-        Logger::logAction($request, 'Captura', $folio['folio'], null, null, null, 'Maquila archivo');            
+         
 
         return response()->json([
             'pdf'       => '/public/storage/maquila/M-'. $folio['folio'].'.pdf',
@@ -706,8 +710,7 @@ class RecepcionsController extends Controller{
             $urlImgPath = null;
         }
 
-        $job = MaquilaArchivoImgJob::dispatch($folio['folio'], $urlFilePath, $urlImgPath);
-        Logger::logAction($request, 'Captura', $folio['folio'], null, null, null, 'Maquila archivo');            
+        $job = MaquilaArchivoImgJob::dispatch($folio['folio'], $urlFilePath, $urlImgPath);          
 
         return response()->json([
             'pdf'       => '/public/storage/maquila/MI-'. $folio['folio'].'.pdf',
@@ -826,6 +829,9 @@ class RecepcionsController extends Controller{
         $recepcion->estudios()->updateExistingPivot($estudio->id, ['status' => 'capturado']);
 
 
+        // 
+        activity('captura')->performedOn($estudio)->withProperties(['folio' => $recepcion->id])->log('Estudio capturado');
+
         // Retornas algo al sistema
         return response()->json([
             'status' => true
@@ -845,6 +851,8 @@ class RecepcionsController extends Controller{
               // Actualizas quien capturo la información 
             $recepcion->estudios()->updateExistingPivot($estudio->id, ['status' => 'validado']);
             $recepcion->historials()->where('estudio_id', $estudio->id)->update(['estatus'=>'validado']);
+
+            activity('captura')->performedOn($estudio)->withProperties(['folio' => $recepcion->id])->log('Estudio validado');
 
             return response()->json([
                 'success' => true,
@@ -872,6 +880,8 @@ class RecepcionsController extends Controller{
             $estudio = Estudio::where('clave', $referencia['identificador'])->first();
     
             $recepcion->estudios()->updateExistingPivot($estudio->id, ['status' => 'capturado']);
+    
+            activity('captura')->performedOn($estudio)->withProperties(['folio' => $recepcion->id])->log('Estudio invalidado');
     
             return response()->json([
                 'success' => true,
@@ -907,6 +917,9 @@ class RecepcionsController extends Controller{
             Recepcions::where('id', $recepcion->id)->update([
                 'valida_id' => Auth::user()->id,
             ]);
+
+            activity('captura')->performedOn($clave_estudio)->withProperties(['folio' => $recepcion->id])->log('Estudio para imagenologia validada');
+
             
             if($actualizar) {
                 $recepcion->deparment()->where('deparments.id', $clave_estudio->deparment()->first()->id)->update(['estatus_area' => 'validado']);
@@ -941,6 +954,7 @@ class RecepcionsController extends Controller{
     
             $recepcion = Recepcions::where('folio', $folio)->first(); 
             $estudio = Picture::where('clave', $referencia['identificador'])->first();
+            activity('captura')->performedOn($estudio)->withProperties(['folio' => $recepcion->id])->log('Estudio imagenologia invalidada');
     
             $recepcion->picture()->updateExistingPivot($estudio->id, ['estatus_area' => 'capturado']);
     
@@ -1006,6 +1020,8 @@ class RecepcionsController extends Controller{
         // Actualiza quien valida
         Recepcions::where('id', $recepcion->id)->update(['captura_id' => Auth::user()->id]);
 
+        activity('captura')->performedOn($clave_estudio)->withProperties(['folio' => $recepcion->id])->log('Estudio imagenologia capturada');
+
         // if($insercion) {
         //     // $insercion->recepcions()->first()
         //     //     ->areas()->where('areas.id', $clave_estudio->areas()->first()->id)
@@ -1044,6 +1060,7 @@ class RecepcionsController extends Controller{
 
         $recepcion = Recepcions::where('folio', $folio['folio'])->first();
         $clave_estudio = Picture::where('clave', $identificador['identificador'])->first();
+        activity('captura')->performedOn($clave_estudio)->withProperties(['folio' => $recepcion->id])->log('Estudio para imagenologia validada');
 
         
         $insercion = Historial::updateOrCreate([
@@ -1985,10 +2002,12 @@ class RecepcionsController extends Controller{
         switch ($precio->tipo) {
             case 'Estudio':
                 $estudio = $folio->estudios()->where('clave', $recibo['estudio'])->first();
+                activity('recepcion')->performedOn($folio)->withProperties(['estudio' => $estudio->clave])->log('Estudio eliminado');
                 $folio->estudios()->detach($estudio);
                 break;
             case 'Perfil':
                 $perfil = $folio->recepcion_profiles()->where('clave', $recibo['estudio'])->first();
+                activity('recepcion')->performedOn($folio)->withProperties(['perfil' => $perfil->clave])->log('Perfil eliminado');
                 foreach ($perfil->perfil_estudio()->get() as $key => $value) {
                     $folio->estudios()->detach($value);
                 }
@@ -1996,6 +2015,7 @@ class RecepcionsController extends Controller{
                 break;
             case 'Imagenologia':
                 $estudio = $folio->picture()->where('clave', $recibo['estudio'])->first();
+                activity('recepcion')->performedOn($folio)->withProperties(['imagen' => $estudio->clave])->log('Imagen eliminado');
                 $folio->picture()->detach($estudio);
                 break;
             default:
@@ -2007,7 +2027,6 @@ class RecepcionsController extends Controller{
 
         
         // Bitacora 
-        Logger::logAction($request, 'Estudio', $precio->id, 'delete', 'Folios', $folio->id,);
 
         if($eliminar){
             return response()->json([
@@ -2031,7 +2050,6 @@ class RecepcionsController extends Controller{
 
         $eliminar = $folio->recepcion_profiles()->detach($perfil);
 
-        Logger::logAction($request, 'Perfil', $perfil->id, 'delete', 'Folios', $folio->id,);
         
         if($eliminar){
             return response()->json([
@@ -2055,7 +2073,6 @@ class RecepcionsController extends Controller{
 
         $eliminar = $folio->picture()->detach($img);
 
-        Logger::logAction($request, 'Imagenologia', $img->id, 'delete', 'Folios', $folio->id,);
 
         
         if($eliminar){
@@ -2081,7 +2098,7 @@ class RecepcionsController extends Controller{
         $comentario = Observaciones::create(['observacion' => $coment]);
         $comentario->comentarios()->save($folio);
 
-        Logger::logAction($request, 'Folios', $folio->id, 'update');
+        activity('recepcion')->performedOn($folio)->withProperties(['observacion' => $comentario->observacion])->log('Folio actualizado');
 
         return response()->json([
             'success'   => true,
@@ -2215,6 +2232,7 @@ class RecepcionsController extends Controller{
     public function recepcion_folio_update_estudios(Request $request){
         // dd($request);
         $response = $this->folioService->linkPreciosUpdate($this->folioService->getFolioByID($request->id), $request->lista);
+        activity('recepcion')->performedOn($this->folioService->getFolioByID($request->id))->log('Folio con estudios actualizado');
 
         return response()->json([
             'success' => true,
@@ -2592,7 +2610,7 @@ class RecepcionsController extends Controller{
 
     public function recepcion_delete_folio($id, Request $request){
         $delete = Recepcions::where('id', $id)->delete();
-        Logger::logAction($request,'Folios', $id, 'delete');
+        activity('recepcion')->performedOn(Recepcions::withTrashed()->find($id))->log('Folio eliminado');
         return redirect()->route('stevlab.recepcion.editar');
     }
 
