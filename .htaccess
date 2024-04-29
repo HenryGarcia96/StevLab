@@ -3,7 +3,7 @@
         Options -MultiViews -Indexes
     </IfModule>
 
-    <Files ~ "\.(env|json|config.js|md|gitignore|gitattributes|lock|artisan)$">
+    <Files ~ "\.(env|json|config.js|md|gitignore|gitattributes|lock|artisan|zip)$">
         Order allow,deny
         Deny from all
     </Files>
