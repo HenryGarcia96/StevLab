@@ -2950,18 +2950,7 @@ class RecepcionsController extends Controller{
         }
 
         $paciente = $query_folio->paciente()->first();
-        // $ruta = ['pdf' => '/public/storage/patient_files/F-'. $folio['folio'].'.pdf'];
-        // $ruta = ['url' => url('public/storage/patient_files/F-'. $folio['folio'] .'.pdf')];
-        
-        // $ruta = ['laboratorio' => $user->labs()->first()->nombre ];
-        // $ruta = ['nombre_paciente' => $query_folio->paciente()->first()->nombre ];
-        // $ruta = ['correo_paciente' => $query_folio->paciente()->first()->email ];
-        
-        // $ruta = ['nombre_doctor' => $query_folio->doctores()->first()->nombre ];
-        // $ruta = ['correo_doctor' => $query_folio->paciente()->first()->email ];
-
-        // Compress file to encription
-        
+               
         
 
         // return $ruta;
