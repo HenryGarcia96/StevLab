@@ -124,7 +124,6 @@ class ReporteController extends Controller
         $laboratorio    = User::where('id', Auth::user()->id)->first()->labs()->first();
         $memb = "data:image/jpeg;base64," . base64_encode(Storage::disk('public')->get($laboratorio->membrete));
 
-        // dd($request);
         $doctor     = Doctores::where('id', $request->doctor)->first();
         $empresa    = Empresas::where('id', $request->empresa)->first();
         $usuario    = User::where('id', $request->usuario)->first();
@@ -147,32 +146,36 @@ class ReporteController extends Controller
                     $query->where('subsidiary_id', $sucursal->id);
                 });
             })
-            // ->with(['doctores', 'empresas', 'paciente', 'lista'])
             ->select('recepcions.id', 'recepcions.id_doctor', 'recepcions.id_empresa', 'recepcions.id_paciente', 'recepcions.descuento', 'recepcions.folio', 'recepcions.estado', 'recepcions.created_at')
             ->orderBy('id', 'desc')
             ->get();
-        // dd($results->count());
         
-        // dd($results->toArray());
-        // OBTENER MONTO
-        // $tiempo = microtime(true) - $tempInicio;
-        // echo "La consulta tardó $tiempo segundos en ejecutarse.";
-        // dd("La consulta tardo $tiempo en ejecutarse");
-
+        foreach ($results as $key => $value) {
+            $value->paciente    = $value->paciente()->first()->nombre;
+            $value->doctor      = $value->doctores()->first()->nombre;
+            $value->empresa     = $value->empresas()->first()->descripcion;
+            $value->total       = $value->lista()->sum('precio');
+            $value->anticipo    = $value->pago()->count() === 1 ? $value->pago()->first()->importe : 0;
+            $value->estado      = $value->estado === 'pagado' ? 0 : ($value->pago()->count() === 0 ? 0 : (($value->lista()->sum('precio') - $value->pago()->first()->importe) - $value->descuento) );
+            $value->estudios    = $value->lista()->get()->pluck('clave');
+            $value->fecha       = Carbon::parse($value->created_at)->format('d-m-Y');
+        }
+        // $tempInicio = microtime(true);
+        
         // pdf
         $pdf = Pdf::loadView('invoices.reportes.arqueo.invoice-arqueo',[
             'membrete' => $memb, 
             'folios' => $results
         ]);
 
+        $pdf->setOption("dpi", 150);
         $pdf->setPaper('letter', 'portrait');
         $pdf->render();
-        return $pdf->download();
+        return $pdf->stream();
 
-        // return view('invoices.reportes.arqueo.invoice-arqueo',[
-        //         'membrete' => $memb, 
-        //         'folios' => $results
-        //     ]);
+        // $tiempo = microtime(true) - $tempInicio;
+        // echo "La consulta tardó $tiempo segundos en ejecutarse.";
+        // dd("La consulta tardo $tiempo en ejecutarse");
     }
 
 

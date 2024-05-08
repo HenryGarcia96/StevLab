@@ -30,20 +30,16 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
-use App\Jobs\GeneratePdfImg;
 use App\Jobs\MaquilaArchivoImgJob;
 use App\Jobs\MaquilaArchivoJob;
 use App\Jobs\PatientiFileJob;
 use App\Models\Area;
-use App\Models\Laboratory;
-use App\Models\Precio;
 use App\Services\AnalitoService;
 use App\Services\FolioService;
 use App\Services\ImportacionService;
 use App\Services\PdfService;
 use App\Services\PrefolioService;
 use App\Services\ResultadoService;
-use DevRaeph\PDFPasswordProtect\Facade\PDFPasswordProtect;
 use Maatwebsite\Excel\Facades\Excel;
 use Milon\Barcode\DNS1D;
 use setasign\Fpdi\Fpdi;
@@ -206,7 +202,7 @@ class RecepcionsController extends Controller{
         $response = $this->folioService->linkPrecios($this->folioService->getFolioByID($request->id), $request->lista);
 
         // Invoco al logger
-        activity('recepcion')->performedOn($this->folioService->getFolioByID($request->id))->log('Estudios guardados para folio sujeto');
+        activity('recepcion')->performedOn($this->folioService->getFolioByID($request->id))->log('Estudios guardados para folio objetivo');
 
         return response()->json([
             'success' => true,
@@ -2954,18 +2950,7 @@ class RecepcionsController extends Controller{
         }
 
         $paciente = $query_folio->paciente()->first();
-        // $ruta = ['pdf' => '/public/storage/patient_files/F-'. $folio['folio'].'.pdf'];
-        // $ruta = ['url' => url('public/storage/patient_files/F-'. $folio['folio'] .'.pdf')];
-        
-        // $ruta = ['laboratorio' => $user->labs()->first()->nombre ];
-        // $ruta = ['nombre_paciente' => $query_folio->paciente()->first()->nombre ];
-        // $ruta = ['correo_paciente' => $query_folio->paciente()->first()->email ];
-        
-        // $ruta = ['nombre_doctor' => $query_folio->doctores()->first()->nombre ];
-        // $ruta = ['correo_doctor' => $query_folio->paciente()->first()->email ];
-
-        // Compress file to encription
-        
+               
         
 
         // return $ruta;
